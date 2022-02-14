@@ -1,9 +1,9 @@
 package basic;
 
-public class PriorityQueue {
+public class PQ {
 
     public static void main(String[] args) {
-        java.util.PriorityQueue pq = new java.util.PriorityQueue();
+        var pq = new java.util.PriorityQueue<>();
 
         pq.offer(3);
         pq.offer(1);
