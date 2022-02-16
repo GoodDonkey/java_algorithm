@@ -9,7 +9,7 @@ import java.util.Map;
 public class N007Parenthesis {
     public static void main(String[] args) {
 //        new N007Parenthesis().solution(")(())(");
-        System.out.println(new N007Parenthesis().solution(")))())()()(((("));
+        System.out.println(new N007Parenthesis().solution("()))((()"));
     }
 
     // ())( /  )( ())(
@@ -37,13 +37,13 @@ public class N007Parenthesis {
             str = str.replaceFirst("[(]", ")");
         }
 
-        String replaced = "";
+        String replaced;
+        StringBuffer sb = new StringBuffer(str);
         for (int i = 0; i < str.length(); i++) {
-            if (indexes.contains(i)) {
-                continue;
-            }
-            replaced = str.replaceFirst("[)]", "(");
+            if (indexes.contains(i)) {continue;}
+            sb.setCharAt(i, '(');
         }
+        replaced = sb.toString();
         return replaced;
     }
 
