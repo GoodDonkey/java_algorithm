@@ -33,85 +33,34 @@ public class N015GemShopping {
     public int[] solution(String[] gems) {
         int[] answer = new int[2];
         LinkedList<String> gemsList = new LinkedList<>(Arrays.asList(gems));
-        List<Search> targets = new ArrayList<>();
+        HashMap<String, Integer> gemsMap = new HashMap<>();
         Set<String> uniques = new HashSet<>(gemsList);
-        for (String gem : uniques) {
-            targets.add(new Search(gem, gemsList.indexOf(gem), "back"));
-            targets.add(new Search(gem, gemsList.lastIndexOf(gem), "front"));
-        }
     
-        Map<Search, Integer> results = new HashMap<>();
-        while (!targets.isEmpty()) {
-            HashSet<Object> gemSet = new HashSet<>();
-            Search search = targets.get(0);
-            String direction = search.direction;
-            int searchingIndex = search.index;
-            results.put(search, 0);
-            
-            while (searchingIndex > 0 && searchingIndex < gemsList.size() - 1 && !gemSet.containsAll(uniques)) {
-                if (direction.equals("back")) {
-                    gemSet.add(gemsList.get(searchingIndex++));
-                } else {
-                    gemSet.add(gemsList.get(searchingIndex--));
-                }
-            }
-
-            results.put(search, searchingIndex);
-            
-            
-            targets.remove(0);
-            int finalDestination = searchingIndex;
-            targets.removeIf(t -> t.gemName.equals(gemsList.get(finalDestination)) &&
-                                  t.direction.equals(opposite(direction)) &&
-                                  t.index == finalDestination);
-        }
-        System.out.println(results);
+        int start = 0;
+        int currStart = 0;
+        int length = gems.length;
+        Queue<String> queue = new LinkedList<>();
         
-        answer[0] = uniques.size();
-        answer[1] = gems.length;
-        for (Search key : results.keySet()) {
-            int startIndex = key.index;
-            int endIndex = results.get(key);
-            if (key.direction.equals("front")) {
-                startIndex = results.get(key);
-                endIndex = key.index;
+        for (int i = 0; i < gems.length; i++) {
+            String gem = gems[i];
+            gemsMap.put(gem, gemsMap.getOrDefault(gem, 0) + 1);
+            queue.offer(gem);
+            while (true) {
+                String firstGemInQueue = queue.peek();
+                if (gemsMap.get(firstGemInQueue) > 1) {
+                    queue.poll();
+                    gemsMap.put(firstGemInQueue, gemsMap.get(firstGemInQueue) - 1);
+                    currStart++;
+                } else break;
             }
-            int length = Math.abs(startIndex - endIndex);
-            
-            if (Math.abs(answer[1]-answer[0]) > length && answer[0] > startIndex) {
-                answer[0] = startIndex + 1;
-                answer[1] = endIndex + 1;
+            if (gemsMap.size() == uniques.size() && length > queue.size()) {
+                length = queue.size();
+                start = currStart;
             }
         }
-        System.out.println(Arrays.toString(answer));
-        
-    
+        answer[0] = start + 1;
+        answer[1] = start + length;
         return answer;
-    }
-    
-    private String opposite(String direction) {
-        if (direction.equals("back")) {
-            return "front";
-        } else {
-            return "back";
-        }
-    }
-    
-    class Search {
-        String gemName;
-        int index;
-        String direction;
-    
-        public Search(String gemName, int index, String direction) {
-            this.gemName = gemName;
-            this.index = index;
-            this.direction = direction;
-        }
-    
-        @Override
-        public String toString() {
-            return "Search{" + "gemName='" + gemName + '\'' + ", index=" + index + ", direction='" + direction + '\'' + '}';
-        }
     }
 
     public int[] solution2(String[] gems) {
