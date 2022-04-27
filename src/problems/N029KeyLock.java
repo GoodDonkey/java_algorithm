@@ -1,10 +1,10 @@
 package problems;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,83 +19,58 @@ public class N029KeyLock {
         boolean solution = new N029KeyLock().solution(key, lock);
         assertTrue(solution);
     }
-    class Locations{
-        List<int[]> locations = new ArrayList<>();
-        int lockLength;
-        
-        public Locations(int[][] key, int lockLength) {
-            for (int i = 0; i < key.length; i++) {
-                for (int j = 0; j < key[i].length; j++) {
-                    if (key[i][j] == 1) {
-                        locations.add(new int[]{i, j});
-                    }
-                }
-            }
-            this.lockLength = lockLength;
-        }
-        
-        public Locations spin() {
-            int length = this.locations.size();
-            for (int[] location : this.locations) {
-                int row = location[0];
-                location[0] = length - location[1] - 1;
-                location[1] = row;
-            }
-            locations.forEach(arr -> System.out.println(Arrays.toString(arr)));
-            return this;
-        }
     
-        public void move(int x, int y) {
-            this.toFirst();
-            for (int i = 0; i < locations.size(); i++) {
-                locations.get(i)[0] += x;
-                locations.get(i)[1] += y;
-            }
-        }
-        
-        public void toFirst() {
-            for (int i = 0; i < locations.size(); i++) {
-                locations.get(i)[0] -= lockLength - 1;
-                locations.get(i)[1] -= lockLength - 1;
-            }
-        }
-    
-        public boolean containsAll(Collection<int[]> collection) {
-            return locations.containsAll(collection);
-        }
-    }
+    HashSet<int[]> keyLocations = new HashSet<>();
+    HashSet<int[]> lockLocations = new HashSet<>();
+    int lockLength;
+    int keyLength;
     
     public boolean solution(int[][] key, int[][] lock) {
         boolean answer = false;
-        // 좌표를 저장해야함.
-        Locations locations = new Locations(key, lock.length);
-        locations.toFirst();
-    
-        Set<int[]> empties = new HashSet<>();
+        lockLength = lock.length;
+        keyLength = key.length;
+        
+        // lock 이 항상 크므로 같이 조회 가능.
         for (int i = 0; i < lock.length; i++) {
-            for (int j = 0; j < lock[i].length; j++) {
-                if (lock[i][j] == 0) {
-                    empties.add(new int[]{i, j});
-                }
+            for (int j = 0; j < lock.length; j++) {
+                if (key[i][j] == 1) keyLocations.add(new int[]{i, j});
+                if (lock[i][j] == 0) lockLocations.add(new int[]{i, j});
             }
         }
-        int x = 0;
-        int y = 0;
-        while (x < lock.length * 2 || y < lock.length * 2) {
-            System.out.println(x);
-            System.out.println(y);
-            for (int i = 0; i < 4; i++) {
-                if (locations.spin().containsAll(empties)) {
-                    answer = true;
+        System.out.println(keyLocations);
+        System.out.println(lockLocations);
+        
+        int maxLength = lockLength + keyLength - 1;
+        toFirst(keyLocations); // 0,0 부터 완전 탐색
+        int rowCount = 1;
+        
+        while (rowCount <= maxLength) {
+            System.out.println(rowCount);
+            for (int i = 0; i < maxLength; i++) { // x축 1씩 이동
+                for (int j = 0; j < 4; j++) { // 4 번씩 돌려본다.
+                    for (int k = 0; k < keyLength; k++) { // key 의 돌기 위치들을 확인함
+                        if (keyLocations.containsAll(lockLocations)) { // key들이 모든 lock 홈에 들어가고,
+                            Set<int[]> notContaining = keyLocations.stream()
+                                    .filter(arr -> !lockLocations.contains(arr))
+                                    .collect(Collectors.toSet());
+                            System.out.println("notContaining" + notContaining);
+                            for (int[] item : notContaining) {
+                                if (item[0] > lockLength || item[1] > lockLength) {
+                                    answer = true;
+                                    rowCount = 20;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    spin(keyLocations);
                 }
+                xPlus(keyLocations);
             }
-            if (x == lock.length * 2) {
-                x = 0;
-                y++;
-            }
-            x++;
-            locations.move(x,y);
+            yPlus(keyLocations);
+            rowCount++;
         }
+        
         
         // 완전탐색
         // lock 길이 - 1만큼 key 의 모든 돌기를 뺀다.(길이 3이면 모든 좌표를 2씩 뺀다.)
@@ -105,12 +80,32 @@ public class N029KeyLock {
         
         return answer;
     }
-    /*
-    * 효율성은 그다지?
-    *
-    * 돌리거나 움직일 때 좌표의 변화는?
-    *   돌리는 경우의 수: 4
-    *   이동하는 경우의 수:
-    * lock 크기를 기준으로 key의 좌표를 표시해야함.
-    * */
+    private void yPlus(HashSet<int[]> keyLocations) {
+        for (int[] keyLocation : keyLocations) {
+            keyLocation[0]++;
+        }
+    }
+    
+    private void xPlus(HashSet<int[]> keyLocations) {
+        for (int[] keyLocation : keyLocations) {
+            keyLocation[1]++;
+        }
+    }
+    
+    private void toFirst(HashSet<int[]> keyLocations) {
+        for (int[] keyLocation : keyLocations) {
+            keyLocation[0] -= keyLength - 1;
+            keyLocation[1] -= keyLength - 1;
+            System.out.println("first" + Arrays.toString(keyLocation));
+        }
+    }
+    
+    private void spin(HashSet<int[]> keyLocations) {
+        for (int[] keyLocation : keyLocations) {
+            int row = keyLocation[0];
+            keyLocation[0] = keyLength - keyLocation[1] - 1;
+            keyLocation[1] = row;
+            System.out.println(Arrays.toString(keyLocation));
+        }
+    }
 }
