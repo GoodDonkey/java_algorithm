@@ -1,11 +1,13 @@
 package problems;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,54 +20,74 @@ public class N034RankSearching {
                                          new String[]{"java and backend and junior and pizza 100","python and frontend and senior and chicken 200","cpp and - and senior and pizza 250","- and backend and senior and - 150","- and - and - and chicken 100","- and - and - and - 150"});
         
     }
-    static String[] lang;
-    static String[] job;
-    static String[] career;
-    static String[] food;
-    static int[] score;
-    static int infoLength;
     
     public int[] solution(String[] info, String[] query) {
         int[] answer = new int[query.length];
-        lang = new String[info.length];
-        job = new String[info.length];
-        career = new String[info.length];
-        food = new String[info.length];
-        score = new int[info.length];
-        infoLength = info.length;
+        Repository repository = new Repository();
     
         for (int i = 0; i < info.length; i++) {
-            String[] infoString = info[i].split("\\s");
-            lang[i] = infoString[0];
-            job[i] = infoString[1];
-            career[i] = infoString[2];
-            food[i] = infoString[3];
-            score[i] = Integer.parseInt(infoString[4]);
+            repository.add(new InfoQuery(info[i]));
+        }
+        repository.sort();
+    
+        LinkedList<InfoQuery> queries = new LinkedList<>();
+        for (int i = 0; i < query.length; i++) {
+            queries.add(new InfoQuery(query[i]));
         }
     
-        for (int i = 0; i < query.length; i++) {
-            String[] queryString = query[i].split("\\s(and)?\\s?");
-            answer[i] = doQuery(queryString);
+        for (int i = 0; i < queries.size(); i++) {
+            InfoQuery q = queries.get(i);
+            answer[i] = repository.countByQuery(q);
         }
+        System.out.println(Arrays.toString(answer));
+    
         return answer;
     }
     
-    private int doQuery(String[] queryString) {
-        int howMany = 0;
-        for (int i = 0; i < infoLength; i++) {
-            if (queryString[0].equals("-") || lang[i].equals(queryString[0])) {
-                if (queryString[1].equals("-") || job[i].equals(queryString[1])) {
-                    if (queryString[2].equals("-") || career[i].equals(queryString[2])) {
-                        if (queryString[3].equals("-") || food[i].equals(queryString[3])) {
-                            if (Integer.parseInt(queryString[4]) <= score[i]) {
-                                howMany++;
-                            }
-                        }
-                    }
-                }
-            }
+    class Repository {
+        private LinkedList<InfoQuery> candidates;
+        
+        public Repository() {
+            this.candidates = new LinkedList<>();
         }
-        return howMany;
+        
+        public void add(InfoQuery info) {
+            candidates.add(info);
+        }
+        
+        public void sort() {
+            candidates.sort(Comparator.comparing(k -> k.score));
+        }
+        
+        public int countByQuery(InfoQuery query) {
+            LinkedList<InfoQuery> result = new LinkedList<>();
+            result.addAll(candidates.stream()
+                                  .filter(can -> can.score >= query.score)
+                                  .filter(can -> query.lang.equals("-") || can.lang.equals(query.lang))
+                                  .filter(can -> query.part.equals("-") || can.part.equals(query.part))
+                                  .filter(can -> query.career.equals("-") || can.career.equals(query.career))
+                                  .filter(can -> query.food.equals("-") || can.food.equals(query.food))
+                                  .collect(Collectors.toList()));
+            
+            return result.size();
+        }
+    }
+    
+    class InfoQuery {
+        private String lang;
+        private String part;
+        private String career;
+        private String food;
+        private int score;
+        
+        InfoQuery(String info) {
+            String[] infoString = info.split("\\s(and)?\\s?");
+            this.lang = infoString[0];
+            this.part = infoString[1];
+            this.career = infoString[2];
+            this.food = infoString[3];
+            this.score = Integer.parseInt(infoString[4]);
+        }
     }
 }
 
