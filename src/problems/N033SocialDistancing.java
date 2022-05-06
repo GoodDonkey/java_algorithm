@@ -21,72 +21,50 @@ public class N033SocialDistancing {
         
     }
     
+    static int[] dx = {-1, 0, 1, 0};
+    static int[] dy = {0, 1, 0, -1};
+    static boolean[][] visit;
+    static int[] answer;
+    
     public int[] solution(String[][] places) {
-        int[] answer = new int[]{1, 1, 1, 1, 1};
-        
+        answer = new int[]{1, 1, 1, 1, 1};
+    
         for (int i = 0; i < places.length; i++) {
-            // 2차원 배열을 만들어서 확인
-            String[][] room = new String[5][5];
-            for (int j = 0; j < 5; j++) { // 대기실 행
-                for (int k = 0; k < 5; k++) { // 대기실 열
-                    room[j][k] = String.valueOf(places[i][j].charAt(k));
-                }
-            }
-            // P를 찾아서 주변을 살핀다.
-            System.out.println(Arrays.deepToString(room));
+            visit = new boolean[5][5];
             for (int j = 0; j < 5; j++) {
                 for (int k = 0; k < 5; k++) {
-                    if (answer[i] == 0) break;
-                    if (room[j][k].equals("P")) {
-                        // 인덱스 범위 체크
-                        if (j + 1 < 5) {
-                            if (room[j + 1][k].equals("P")) {
-                                answer[i] = 0;
-                            }
-                        }
-                        if (k + 1 < 5) {
-                            if (room[j][k + 1].equals("P")) {
-                                answer[i] = 0;
-                            }
-                        }
-                        if (j + 1 < 5 && k + 1 < 5) {
-                            if (room[j + 1][k + 1].equals("P")) {
-                                if (!room[j][k + 1].equals("X") || !room[j + 1][k].equals("X")) {
-                                    System.out.println(j + ":" + k);
-                                    answer[i] = 0;
-                                }
-                            }
-                        }
-                        if (j + 2 < 5) {
-                            if (room[j + 2][k].equals("P")) {
-                                if (!room[j + 1][k].equals("X")) {
-                                    System.out.println(j + ":" + k);
-                                    answer[i] = 0;
-                                }
-                            }
-                        }
-                        if (k + 2 < 5) {
-                            if (room[j][k + 2].equals("P")) {
-                                if (!room[j][k + 1].equals("X")) {
-                                    System.out.println(j + ":" + k);
-                                    answer[i] = 0;
-                                }
-                            }
-                        }
-                        if (j + 1 < 5 && k - 1 >= 0) {
-                            if (room[j + 1][k - 1].equals("P")) {
-                                if (!room[j][k - 1].equals("X") || !room[j + 1][k].equals("X")) {
-                                    System.out.println(j + ":" + k);
-                                    answer[i] = 0;
-                                }
-                            }
-                        }
+                    if (places[i][j].charAt(k) == 'P') {
+                        visit[j][k] = true;
+                        dfs(i, j, k, 0, places[i]);
+                        visit[j][k] = false;
                     }
                 }
             }
         }
-        System.out.println(Arrays.toString(answer));
         return answer;
+    }
+    
+    private void dfs(int roomNum, int row, int col, int distance, String[] place) {
+        if (distance > 2) return; // 3 칸 부터는 확인할 필요 없다.
+        if (distance > 0 && distance <= 2 && place[row].charAt(col) == 'P') {
+            // 2칸 내에 P 가 있으면 거리두기 실패. 파티션은 미리 확인 하였음.
+            answer[roomNum] = 0;
+            return;
+        }
+        
+        // 상우하좌를 확인한다.
+        for (int i = 0; i < 4; i++) {
+            int nx = row + dx[i];
+            int ny = col + dy[i];
+    
+            // 배열 범위 내에 있으면서 파티션이 아니면
+            if (nx >= 0 && nx < 5 && ny >= 0 && ny < 5 && place[nx].charAt(ny) != 'X') {
+                if (visit[nx][ny]) continue;
+                visit[nx][ny] = true; // 재귀 확인에서 이 문자는 확인할 필요가 없다.
+                dfs(roomNum, nx, ny, distance + 1, place);
+                visit[nx][ny] = false;
+            }
+        }
     }
 }
 /*
