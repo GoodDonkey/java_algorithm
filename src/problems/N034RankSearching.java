@@ -3,9 +3,8 @@ package problems;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.net.Inet4Address;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,73 +19,75 @@ public class N034RankSearching {
                                          new String[]{"java and backend and junior and pizza 100","python and frontend and senior and chicken 200","cpp and - and senior and pizza 250","- and backend and senior and - 150","- and - and - and chicken 100","- and - and - and - 150"});
         
     }
+    static HashMap<String, ArrayList<Integer>> infoMap;
     
     public int[] solution(String[] info, String[] query) {
         int[] answer = new int[query.length];
-        Repository repository = new Repository();
-    
-        for (int i = 0; i < info.length; i++) {
-            repository.add(new InfoQuery(info[i]));
+        // 각 경우마다 해시맵으로 키를 만들어둠.
+        // 그다음 키에 맞게 점수를 저장한다.
+        // 그다음 점수 기준으로 쿼리해서 뽑아낸다.
+        // key 는 탐색시간 없고, 점수 기준 정렬 + 이진 탐색 -> 매우 빠른 탐색
+        String[] lang = {"cpp", "java", "python", "-"};
+        String[] part = {"backend", "frontend", "-"};
+        String[] career = {"junior", "senior", "-"};
+        String[] food = {"chicken", "pizza", "-"};
+        infoMap = new HashMap<>();
+        for (String l : lang) {
+            for (String p : part) {
+                for (String s : career) {
+                    for (String f : food) {
+                        infoMap.put(l + p + s + f, new ArrayList<>());
+                    }
+                }
+            }
         }
-        repository.sort();
     
-        LinkedList<InfoQuery> queries = new LinkedList<>();
+        for (String i : info) {
+            String[] alter = new String[4];
+            String[] infoStrings = i.split(" ");
+            int score = Integer.parseInt(infoStrings[4]);
+            dfs(0, alter, infoStrings, score);
+        }
+    
+        for (String s : infoMap.keySet()) {
+            infoMap.get(s).sort(Comparator.comparing(k -> k));
+        }
+    
         for (int i = 0; i < query.length; i++) {
-            queries.add(new InfoQuery(query[i]));
-        }
+            String q = query[i];
+            String[] queryStrings = q.split(" and | ");
+            StringBuilder sb = new StringBuilder();
+            sb.append(queryStrings[0]);
+            sb.append(queryStrings[1]);
+            sb.append(queryStrings[2]);
+            sb.append(queryStrings[3]);
+            ArrayList<Integer> scores = infoMap.get(sb.toString());
+            int target = Integer.parseInt(queryStrings[4]);
+            int left = 0;
+            int right = scores.size() - 1;
+            while (left <= right) {
+                int mid = (left + right) / 2;
+                if (scores.get(mid) < target) {
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
+            }
+            answer[i] = scores.size() - left;
     
-        for (int i = 0; i < queries.size(); i++) {
-            InfoQuery q = queries.get(i);
-            answer[i] = repository.countByQuery(q);
         }
-        System.out.println(Arrays.toString(answer));
-    
         return answer;
     }
     
-    class Repository {
-        private LinkedList<InfoQuery> candidates;
-        
-        public Repository() {
-            this.candidates = new LinkedList<>();
-        }
-        
-        public void add(InfoQuery info) {
-            candidates.add(info);
-        }
-        
-        public void sort() {
-            candidates.sort(Comparator.comparing(k -> k.score));
-        }
-        
-        public int countByQuery(InfoQuery query) {
-            LinkedList<InfoQuery> result = new LinkedList<>();
-            result.addAll(candidates.stream()
-                                  .filter(can -> can.score >= query.score)
-                                  .filter(can -> query.lang.equals("-") || can.lang.equals(query.lang))
-                                  .filter(can -> query.part.equals("-") || can.part.equals(query.part))
-                                  .filter(can -> query.career.equals("-") || can.career.equals(query.career))
-                                  .filter(can -> query.food.equals("-") || can.food.equals(query.food))
-                                  .collect(Collectors.toList()));
-            
-            return result.size();
-        }
-    }
-    
-    class InfoQuery {
-        private String lang;
-        private String part;
-        private String career;
-        private String food;
-        private int score;
-        
-        InfoQuery(String info) {
-            String[] infoString = info.split("\\s(and)?\\s?");
-            this.lang = infoString[0];
-            this.part = infoString[1];
-            this.career = infoString[2];
-            this.food = infoString[3];
-            this.score = Integer.parseInt(infoString[4]);
+    private void dfs(int level, String[] alter, String[] infoStrings, int score) {
+        if (level == 4) { // 다 채워졌으면
+            String string = String.join("", alter);
+            infoMap.get(string).add(score);
+        } else {
+            alter[level] = infoStrings[level]; // 주어진대로
+            dfs(level + 1, alter, infoStrings, score);
+            alter[level] = "-"; // -를 포함하는 키에도 넣음
+            dfs(level + 1, alter, infoStrings, score);
         }
     }
 }
